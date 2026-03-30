@@ -1,0 +1,971 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>易经卜卦</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --xuan-black: #1a1a2e;
+            --zhe-shi: #8b4513;
+            --jin-se: #d4af37;
+            --hong-se: #c41e3a;
+            --bei-jing: #0d0d1a;
+        }
+        
+        body {
+            font-family: 'Noto Serif SC', serif;
+            background: var(--bei-jing);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+        }
+        
+        .bg-pattern {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            opacity: 0.05;
+            background-image: 
+                radial-gradient(circle at 20% 30%, var(--jin-se) 1px, transparent 1px),
+                radial-gradient(circle at 80% 70%, var(--jin-se) 1px, transparent 1px);
+            background-size: 100px 100px, 150px 150px;
+        }
+        
+        .container {
+            text-align: center;
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            z-index: 10;
+        }
+        
+        h1 {
+            color: var(--jin-se);
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 10px;
+            text-shadow: 0 0 30px rgba(212, 175, 55, 0.3);
+            letter-spacing: 0.3em;
+        }
+        
+        .subtitle {
+            color: rgba(212, 175, 55, 0.6);
+            font-size: 1rem;
+            margin-bottom: 40px;
+            letter-spacing: 0.2em;
+        }
+        
+        .turtle-container {
+            position: relative;
+            width: 280px;
+            height: 200px;
+            margin: 0 auto 40px;
+            perspective: 1000px;
+        }
+        
+        .turtle-top {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(145deg, #3d2914 0%, #2a1d0f 50%, #1a1208 100%);
+            border-radius: 50% 50% 0 0 / 100% 100% 0 0;
+            transform-origin: bottom center;
+            transition: transform 0.6s ease-out;
+            z-index: 2;
+            box-shadow: 
+                inset 0 10px 30px rgba(212, 175, 55, 0.2),
+                0 -5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .turtle-top::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70%;
+            height: 60%;
+            background: linear-gradient(135deg, #4a3520 0%, #2d1e10 100%);
+            border-radius: 50%;
+            border: 2px solid var(--jin-se);
+            opacity: 0.6;
+        }
+        
+        .turtle-top.open {
+            transform: rotateX(-120deg);
+        }
+        
+        .turtle-bottom {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 50%;
+            background: linear-gradient(145deg, #3d2914 0%, #2a1d0f 50%, #1a1208 100%);
+            border-radius: 0 0 50% 50% / 0 0 100% 100%;
+            transform-origin: top center;
+            transition: transform 0.6s ease-out;
+            z-index: 1;
+            box-shadow: 
+                inset 0 -10px 30px rgba(212, 175, 55, 0.2),
+                0 5px 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        .turtle-bottom.open {
+            transform: rotateX(120deg);
+        }
+        
+        .coins-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            display: flex;
+            gap: 15px;
+            z-index: 1;
+        }
+        
+        .coin {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.8s ease-in-out;
+        }
+        
+        .coin-front, .coin-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            backface-visibility: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 0.7rem;
+            color: var(--jin-se);
+        }
+        
+        .coin-front {
+            background: linear-gradient(145deg, #b8860b 0%, #8b6914 50%, #654d10 100%);
+            border: 3px solid #d4af37;
+            box-shadow: 
+                inset 0 2px 5px rgba(255, 255, 255, 0.3),
+                inset 0 -2px 5px rgba(0, 0, 0, 0.3),
+                0 5px 15px rgba(0, 0, 0, 0.5);
+        }
+        
+        .coin-back {
+            background: linear-gradient(145deg, #1a1a1a 0%, #0d0d0d 50%, #000 100%);
+            border: 3px solid #444;
+            transform: rotateY(180deg);
+        }
+        
+        .coin.flip {
+            transform: rotateY(180deg);
+        }
+        
+        @keyframes shake {
+            0%, 100% { transform: translateX(0) rotate(0deg); }
+            10% { transform: translateX(-8px) rotate(-5deg); }
+            20% { transform: translateX(8px) rotate(5deg); }
+            30% { transform: translateX(-8px) rotate(-3deg); }
+            40% { transform: translateX(8px) rotate(3deg); }
+            50% { transform: translateX(-5px) rotate(-2deg); }
+            60% { transform: translateX(5px) rotate(2deg); }
+            70% { transform: translateX(-3px) rotate(-1deg); }
+            80% { transform: translateX(3px) rotate(1deg); }
+            90% { transform: translateX(-1px) rotate(0deg); }
+        }
+        
+        .turtle-container.shaking .turtle-top,
+        .turtle-container.shaking .turtle-bottom {
+            animation: shake 0.5s ease-in-out 3;
+        }
+        
+        .turtle-container.shaking .coins-container {
+            animation: shake 0.3s ease-in-out 5;
+        }
+        
+        .btn {
+            background: linear-gradient(145deg, var(--zhe-shi), #5a2d0a);
+            color: var(--jin-se);
+            border: 2px solid var(--jin-se);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-family: 'Noto Serif SC', serif;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.4);
+            letter-spacing: 0.2em;
+            margin: 10px;
+        }
+        
+        .btn:hover {
+            background: linear-gradient(145deg, #a55d1a, var(--zhe-shi));
+            box-shadow: 0 8px 30px rgba(212, 175, 55, 0.3);
+            transform: translateY(-2px);
+        }
+        
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .step-indicator {
+            color: rgba(212, 175, 55, 0.7);
+            font-size: 1.1rem;
+            margin: 20px 0;
+            letter-spacing: 0.1em;
+        }
+        
+        .hexagram-display {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+        
+        .hexagram-section {
+            text-align: center;
+        }
+        
+        .hexagram-title {
+            color: var(--jin-se);
+            font-size: 1.3rem;
+            margin-bottom: 15px;
+            letter-spacing: 0.15em;
+        }
+        
+        .hexagram-lines {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            min-height: 200px;
+        }
+        
+        .hexagram-line {
+            display: flex;
+            gap: 5px;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        
+        .hexagram-line.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .line-segment {
+            width: 12px;
+            height: 4px;
+            background: var(--hong-se);
+            border-radius: 2px;
+            box-shadow: 0 0 10px rgba(196, 30, 58, 0.5);
+        }
+        
+        .line-segment-broken {
+            width: 10px;
+            height: 4px;
+            background: var(--hong-se);
+            border-radius: 2px;
+        }
+        
+        .line-space {
+            width: 6px;
+        }
+        
+        .line-marker {
+            color: var(--jin-se);
+            font-size: 1.2rem;
+            margin-left: 5px;
+        }
+        
+        .result-display {
+            background: rgba(26, 26, 46, 0.8);
+            border: 1px solid rgba(212, 175, 55, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+        
+        .result-display.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+        
+        .result-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 10px 0;
+            color: rgba(212, 175, 55, 0.9);
+            font-size: 1rem;
+            letter-spacing: 0.1em;
+        }
+        
+        .result-symbol {
+            margin: 0 15px;
+            font-size: 1.3rem;
+        }
+        
+        .divination-result {
+            background: linear-gradient(145deg, rgba(26, 26, 46, 0.9), rgba(13, 13, 26, 0.95));
+            border: 1px solid var(--jin-se);
+            border-radius: 15px;
+            padding: 30px;
+            margin-top: 30px;
+            text-align: left;
+            max-height: 0;
+            overflow: hidden;
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+        
+        .divination-result.visible {
+            max-height: 2000px;
+            opacity: 1;
+            overflow-y: auto;
+        }
+        
+        .divination-hexagrams {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+        
+        .divination-hexagram {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            border: 1px solid rgba(212, 175, 55, 0.2);
+            min-width: 140px;
+        }
+        
+        .divination-hexagram-name {
+            color: var(--jin-se);
+            font-size: 1.8rem;
+            font-weight: 700;
+            letter-spacing: 0.2em;
+        }
+        
+        .divination-hexagram-gua {
+            color: rgba(212, 175, 55, 0.7);
+            font-size: 1rem;
+            margin-top: 5px;
+        }
+        
+        .divination-content {
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 2;
+        }
+        
+        .divination-content h3 {
+            color: var(--jin-se);
+            font-size: 1.2rem;
+            margin: 20px 0 10px;
+            letter-spacing: 0.15em;
+        }
+        
+        .divination-content p {
+            margin: 10px 0;
+            text-indent: 2em;
+        }
+        
+        .divination-analysis {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(26, 26, 46, 0.8));
+            border: 1px solid var(--jin-se);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .analysis-title {
+            color: var(--jin-se);
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        
+        .analysis-intro {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .analysis-intro p {
+            margin: 8px 0;
+            text-indent: 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .analysis-body {
+            margin-top: 15px;
+        }
+        
+        .analysis-body p {
+            margin: 10px 0;
+            text-indent: 0;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .analysis-body strong {
+            color: var(--jin-se);
+        }
+        
+        .hidden {
+            display: none !important;
+        }
+        
+        @media (max-width: 480px) {
+            h1 { font-size: 1.8rem; }
+            .turtle-container { width: 220px; height: 160px; }
+            .coin { width: 45px; height: 45px; font-size: 0.6rem; }
+            .btn { padding: 12px 30px; font-size: 1rem; }
+            .divination-result { padding: 20px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-pattern"></div>
+    
+    <div class="container">
+        <h1>易经卜卦</h1>
+        <p class="subtitle">心诚则灵 卦不可戏</p>
+        
+        <div class="step-indicator" id="stepIndicator">点击下方按钮开始卜卦</div>
+        
+        <div class="turtle-container" id="turtleContainer">
+            <div class="turtle-top" id="turtleTop"></div>
+            <div class="coins-container" id="coinsContainer">
+                <div class="coin" id="coin1"><div class="coin-front">乾</div><div class="coin-back"></div></div>
+                <div class="coin" id="coin2"><div class="coin-front">坤</div><div class="coin-back"></div></div>
+                <div class="coin" id="coin3"><div class="coin-front">震</div><div class="coin-back"></div></div>
+            </div>
+            <div class="turtle-bottom" id="turtleBottom"></div>
+        </div>
+        
+        <div class="btn-group" id="mainButtons">
+            <button class="btn" id="startBtn">开始卜卦</button>
+        </div>
+        
+        <div class="btn-group hidden" id="actionButtons">
+            <button class="btn" id="shakeBtn">摇动龟壳</button>
+            <button class="btn" id="openBtn" disabled>打开查看</button>
+        </div>
+        
+        <div class="btn-group hidden" id="continueButtons">
+            <button class="btn" id="nextRoundBtn">下一爻</button>
+        </div>
+        
+        <div class="btn-group hidden" id="restartButtons">
+            <button class="btn" id="restartBtn">重新卜卦</button>
+        </div>
+        
+        <div class="hexagram-display hidden" id="hexagramDisplay">
+            <div class="hexagram-section">
+                <div class="hexagram-title">本卦</div>
+                <div class="hexagram-lines" id="benGuaLines"></div>
+            </div>
+            <div class="hexagram-section">
+                <div class="hexagram-title">之卦</div>
+                <div class="hexagram-lines" id="zhiGuaLines"></div>
+            </div>
+        </div>
+        
+        <div class="result-display" id="resultDisplay">
+            <div class="result-row">
+                <span>第 <span id="roundNum">1</span> 爻</span>
+                <span class="result-symbol" id="resultSymbol">—</span>
+                <span id="resultText">少阳</span>
+            </div>
+        </div>
+        
+        <div class="divination-result" id="divinationResult"></div>
+    </div>
+
+    <script>
+        // 六十四卦数据（键值格式：上卦三位 + 下卦三位，二进制从000到111）
+        const HEXAGRAMS = {
+            "000000": { name: "坤", gua: "坤为地", guaCi: "元亨利牝马之贞。君子有攸往，先迷后得主。利西南得朋，东北丧朋。安贞吉。", tuan: "至哉坤元，万物资生，乃顺承天。坤厚载物，德合无疆。含弘光大，品物咸亨。牝马地类，行地无疆，柔顺利贞。君子攸行，先迷失道，后顺得常。西南得朋，乃与类行；东北丧朋，乃终有庆。安贞之吉，应地无疆。", xiang: "地势坤，君子以厚德载物。", yao: ["履霜，坚冰至", "直方大，不习无不利", "含章可贞，或从王事，无成有终", "括囊，无咎无誉", "黄裳元吉", "龙战于野，其血玄黄", "利永贞"] },
+            "001000": { name: "震", gua: "震为雷", guaCi: "亨。震来虩虩，笑言哑哑。震惊百里，不丧匕鬯。", tuan: "震，亨。震来虩虩，恐致福也。笑言哑哑，后有则也。震惊百里，惊远而惧迩也。出可以守宗庙社稷，以为祭主也。", xiang: "洊雷，震；君子以恐惧修身。", yao: ["震来虩虩，后笑言哑哑，吉", "震来厉，亿丧贝，跻于九陵，勿逐，七日得", "震苏苏，震行无眚", "震遂泥", "震往来厉，亿无丧，有事", "震索索，视矍矍，征凶"] },
+            "010000": { name: "坎", gua: "坎为水", guaCi: "习坎，有孚维心亨，行有尚。", tuan: "习坎，重险也。水流而不盈，行险而不失其信。维心亨，乃以刚中也。行有尚，往有功也。天险不可升也，地险山川丘陵也，王公设险以守其国，坎之时用大矣哉！", xiang: "水洊至，习坎；君子以常德行，习教事。", yao: ["习坎，入于坎窞，凶", "坎有险，求小得", "来之坎坎，险且枕，入于坎窞，勿用", "樽酒簋贰，用缶，纳约自牖，终无咎", "坎不盈，祗既平，无咎", "系用徽纆，寘于丛棘，三岁不得，凶"] },
+            "011000": { name: "兑", gua: "兑为泽", guaCi: "亨，利贞。", tuan: "兑，说也。刚中而柔外，说以利贞，是以顺乎天，而应乎人。说以先民，民忘其劳；说以犯难，民忘其死；说之大，民劝矣哉！", xiang: "丽泽，兑；君子以朋友讲习。", yao: ["和兑，吉", "孚兑，吉，悔亡", "来兑，凶", "商兑，未宁，介疾有喜", "孚于剥，有厉", "引兑，吉"] },
+            "100000": { name: "艮", gua: "艮为山", guaCi: "艮其背，不获其身。行其庭，不见其人。无咎。", tuan: "艮，止也。时止则止，时行则行，动静不失其时，其道光明。艮其止，止其所也。上下敌应，不相与也。是以不获其身，行其庭不见其人，无咎也。", xiang: "兼山，艮；君子以思不出其位。", yao: ["艮其趾，无咎", "艮其腓，不拯其随，其心不快", "艮其限，列其夤，厉，熏心", "艮其身，无咎", "艮其辅，言有序，悔亡", "敦艮，吉"] },
+            "101000": { name: "离", gua: "离为火", guaCi: "利贞，亨。畜牝牛，吉。", tuan: "离，丽也。日月丽乎天，百谷草木丽乎土，重明以丽乎正，乃化成天下。柔丽乎中正，故亨，是以畜牝牛吉也。", xiang: "明两作，离；大人以继明照于四方。", yao: ["履错然，敬之无咎", "黄离，元吉", "日昃之离，不鼓缶而歌，则大耋之嗟，凶", "突如其来如，焚如，死如，弃如", "出涕沱若，戚嗟若，吉", "王用出征，有嘉折首，获非其丑，无咎"] },
+            "110000": { name: "巽", gua: "巽为风", guaCi: "小亨，利有攸往，利见大人。", tuan: "巽，入也。刚巽乎中正而志行，柔皆顺乎刚，是以小亨，利有攸往，利见大人。", xiang: "随风，巽；君子以申命行事。", yao: ["进退，利武人之贞", "巽在床下，用史巫纷若，吉，无咎", "频巽，吝", "悔亡，田获三品", "贞吉，悔亡，无不利。无初有终，先庚三日，后庚三日，吉", "巽在床下，亡其资斧，贞凶"] },
+            "111000": { name: "乾", gua: "乾为天", guaCi: "元亨利贞。", tuan: "大哉乾元，万物资始，乃统天。云行雨施，品物流形。大明终始，六位时成，时乘六龙以御天。乾道变化，各正性命，保合大和，乃利贞。首出庶物，万国咸宁。", xiang: "天行健，君子以自强不息。", yao: ["潜龙勿用", "见龙在田，利见大人", "君子终日乾乾，夕惕若厉，无咎", "或跃在渊，无咎", "飞龙在天，利见大人", "亢龙有悔", "见群龙无首，吉"] },
+            "000001": { name: "豫", gua: "雷地豫", guaCi: "利建侯行师。", tuan: "豫，刚应而志行，顺以动，豫。豫顺以动，故天地如之，而况建侯行师乎？天地以顺动，故日月不过，而四时不忒；圣人以顺动，则刑罚清而民服。豫之时义大矣哉！", xiang: "雷出地奋，豫；先王以作乐崇德，殷荐之上帝，以配祖考。", yao: ["鸣豫，凶", "介于石，不终日，贞吉", "盱豫，悔，迟有悔", "由豫，大有得，勿疑，朋盍簪", "贞疾，恒不死", "冥豫，成有渝，无咎"] },
+            "001001": { name: "丰", gua: "雷火丰", guaCi: "亨，王假之。勿忧，宜日中。", tuan: "丰，大也。明以动，故丰。王假之，尚大也。勿忧，宜日中，宜照天下也。日中则昃，月盈则食，天地盈虚，与时消息，而况于人乎？况于鬼神乎？", xiang: "雷电皆至，丰；君子以折狱致刑。", yao: ["遇其配主，虽旬无咎，往有尚", "丰其蔀，日中见斗，往得疑疾，有孚发若，吉", "丰其沛，日中见昧，折其右肱，无咎", "丰其蔀，斗，往得疑疾，有孚发若，吉", "来章，有庆誉，吉", "丰其屋，蔀其家，窥其户，阒其无人，三岁不觌，凶"] },
+            "010001": { name: "屯", gua: "水雷屯", guaCi: "元亨利贞，勿用有攸往，利建侯。", tuan: "屯，刚柔始交而难生，动乎险中，大亨贞。雷雨之动满盈，天造草昧，宜建侯而不宁。", xiang: "云雷屯，君子以经纶。", yao: ["磐桓，利居贞，利建侯", "屯如邅如，乘马班如，匪寇婚媾", "即鹿无虞，惟入于林中，君子几不如舍，往吝", "乘马班如，求婚媾，往吉，无不利", "屯其膏，小贞吉，大贞凶", "乘马班如，泣血涟如"] },
+            "011001": { name: "革", gua: "泽火革", guaCi: "巳日乃孚，元亨利贞，悔亡。", tuan: "革，水火相息，二女同居，其志不相得，曰革。巳日乃孚，革而信之。文明以说，大亨以正。革而当，其悔乃亡。天地革而四时成，汤武革命，顺乎天而应乎人，革之时义大矣哉！", xiang: "泽中有火，革；君子以治历明时。", yao: ["巩用黄牛之革", "巳日乃革之，征吉，无咎", "征凶，贞厉，革言三就，有孚", "悔亡，有孚改命，吉", "大人虎变，未占有孚", "君子豹变，小人革面，征凶，居贞吉"] },
+            "100001": { name: "谦", gua: "地山谦", guaCi: "亨，君子有终。", tuan: "谦，亨，天道下济而光明，地道卑而上行。天道亏盈而益谦，地道变盈而流谦，鬼神害盈而福谦，人道恶盈而好谦。谦尊而光，卑而不可逾，君子之终也。", xiang: "地中有山，谦；君子以裒多益寡，称物平施。", yao: ["谦谦君子，卑以自牧也", "鸣谦，贞吉", "劳谦君子，万民服也", "无不利，㧑谦", "不富以其邻，利用侵伐，无不利", "鸣谦，志未得也，可用行师，征邑国也"] },
+            "101001": { name: "明夷", gua: "地火明夷", guaCi: "利艰贞。", tuan: "明入地中，明夷。内文明而外柔顺，以蒙大难，文王以之。利艰贞，晦其明也，内难而能正其志，箕子以之。", xiang: "明入地中，明夷；君子以莅众，用晦而明。", yao: ["明夷于飞，垂其翼，君子于行，三日不食，有攸往，主人有言", "明夷，夷于左股，用拯马壮，吉", "明夷于南狩，得其大首，不可疾贞", "入于左腹，获心意也", "箕子之明夷，利贞", "不明，晦，初登于天，照四国也"] },
+            "110001": { name: "小过", gua: "雷山小过", guaCi: "亨，利贞。可小事，不可大事。飞鸟遗之音，不宜上，宜下，大吉。", tuan: "小过，小者过而亨也。过以利贞，与时行也。柔得中，是以小事吉也。刚失位而不中，是以不可大事也。有飞鸟之象焉，飞鸟遗之音，不宜上，宜下，大吉，上逆而下顺也。", xiang: "山上有雷，小过；君子以行过乎恭，丧过乎哀，用过乎俭。", yao: ["飞鸟以凶", "过其祖，遇其妣，不及其君，遇其臣，无咎", "弗过防之，从或戕之，凶", "无咎，弗过遇之，往厉必戒，勿用永贞", "密云不雨，自我西郊，公弋取彼在穴", "弗遇过之，飞鸟离之，凶"] },
+            "111001": { name: "履", gua: "天泽履", guaCi: "履虎尾，不咥人，亨。", tuan: "履，柔履刚也。说而应乎乾，是以履虎尾，不咥人，亨。刚中正，履帝位而不疚，光明也。", xiang: "上天下泽，履；君子以辨上下，定民志。", yao: ["素履，往无咎", "幽人贞吉", "眇能视，跛能履，履虎尾，咥人，凶", "履虎尾，愬愬，终吉", "夬履，贞厉", "元吉在上，大有庆也"] },
+            "000010": { name: "复", gua: "地雷复", guaCi: "亨。出入无疾，朋来无咎。反复其道，七日来复，利有攸往。", tuan: "复，亨，刚反，动而以顺行，是以出入无疾，朋来无咎。反复其道，七日来复，天行也。利有攸往，刚长也。复，其见天地之心乎？", xiang: "雷在地中，复；先王以至日闭关，商旅不行，后不省方。", yao: ["不远复，无祗悔，元吉", "休复，吉", "频复，厉，无咎", "中行独复", "敦复，无悔", "迷复，凶，有灾眚。用行师，终有大败，以其国君凶"] },
+            "001010": { name: "噬嗑", gua: "火雷噬嗑", guaCi: "亨，利用狱。", tuan: "颐中有物，曰噬嗑。噬嗑而亨，刚柔分，动而明，雷电合而章。柔得中而上行，虽不当位，利用狱也。", xiang: "雷电，噬嗑；先王以明罚敕法。", yao: ["履校灭趾，无咎", "噬肤灭鼻，无咎", "噬腊肉，遇毒，小吝，无咎", "噬干胏，得金矢，利艰贞，吉", "丧贝，跻于岸，高陵数仞", "何校灭耳，凶"] },
+            "010010": { name: "节", gua: "水泽节", guaCi: "亨，苦节不可贞。", tuan: "节，亨，刚柔分，而刚得中。苦节不可贞，其道穷也。说以行险，当位以节，中正以通。天地节而四时成，节以制度，不伤财，不害民。", xiang: "泽上有水，节；君子以制数度，议德行。", yao: ["不出户庭，无咎", "不出门庭，凶", "不节若，则嗟若，无咎", "安节，亨", "甘节，吉，往有尚", "苦节，贞凶，悔亡"] },
+            "011010": { name: "睽", gua: "火泽睽", guaCi: "小事吉。", tuan: "睽，火动而上，泽动而下；二女同居，其志不同行；说而丽乎明，柔进而上行，得中而应乎刚；是以小事吉。天地睽而其事同也，男女睽而其志通也，万物睽而其事类也，睽之时用大矣哉！", xiang: "上火下泽，睽；君子以同而异。", yao: ["见恶人，无咎", "遇主于巷，无咎", "见舆曳，其牛掣，其人天且劓，无初有终", "睽孤，遇元夫，交孚，厉无咎", "悔亡，厥宗噬肤，往有灾也", "无妄之灾，或系之牛，行人之得，邑人之灾"] },
+            "100010": { name: "蒙", gua: "山水蒙", guaCi: "亨，匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。", tuan: "蒙，山下有险，险而止，蒙。蒙，亨，以亨行时中也。匪我求童蒙，童蒙求我，志应也。初筮告，以刚中也。再三渎，渎则不告，渎蒙也。蒙以养正，圣功也。", xiang: "山下出泉，蒙；君子以果行育德。", yao: ["发蒙，利用刑人，用说桎梏以往，吝", "包蒙，吉；纳妇吉，子克家", "勿用取女，见金夫，不有躬，无攸利", "困蒙，吝", "童蒙，吉", "击蒙，不利为寇，利御寇"] },
+            "101010": { name: "涣", gua: "风水涣", guaCi: "亨，王假有庙。利涉大川，利贞。", tuan: "涣，亨，刚来而不穷，柔得位乎外而上同。王假有庙，王乃在中也。利涉大川，乘木有功也。", xiang: "风行水上，涣；先王以享于帝立庙。", yao: ["用拯马壮，吉", "涣奔其机，悔亡", "涣其躬，无悔", "涣其群，元吉，涣有丘，匪夷所思", "涣汗其大号，涣王居，无咎", "涣其血，去逖出，无咎"] },
+            "110010": { name: "讼", gua: "天水讼", guaCi: "有孚，窒惕，中吉，终凶。利见大人。不利涉大川。", tuan: "讼，上刚下险，险而健，讼。讼，有孚，窒惕，中吉，刚来而得中也。终凶，讼不可成也。利见大人，尚中正也。不利涉大川，入于渊也。", xiang: "天与水违行，讼；君子以作事谋始。", yao: ["不永所事，小有言，终吉", "食旧德，贞厉，终吉，或从王事，无成", "不克讼，归而逋其邑人三百户，无眚", "食旧德，贞厉，终吉，或从王事，无成", "讼，元吉", "朝服之旗，大带飘荡"] },
+            "111010": { name: "姤", gua: "天风姤", guaCi: "女壮，勿用取女。", tuan: "姤，遇也，柔遇刚也。勿用取女，不可与长也。天地相遇，品物咸章也。刚遇中正，天下大行也。姤之时义大矣哉！", xiang: "天下有风，姤；后以施命诰四方。", yao: ["系于金柅，贞吉，有攸往，见凶，羸豕孚蹢躅", "包有鱼，无咎，不利宾", "臀无肤，其行次且，厉，无大咎", "包无鱼，起凶", "有攸往，见凶，羸豕孚蹢躅", "其角，上穷吝也"] },
+            "000011": { name: "颐", gua: "山雷颐", guaCi: "贞吉。观颐，自求口实。", tuan: "颐，贞吉，养正则吉也。观颐，观其所养也；自求口实，观其自养也。天地养万物，圣人养贤以及万民，颐之时义大矣哉！", xiang: "山下有雷，颐；君子以慎言语，节饮食。", yao: ["舍尔灵龟，观我朵颐，凶", "颠颐，拂经，于丘颐，征凶", "拂颐，贞凶，十年勿用，无攸利", "颠颐，吉，虎视眈眈，其欲逐逐，无咎", "拂经，居贞吉，不可涉大川", "由颐，厉，吉，大有庆也"] },
+            "001011": { name: "大过", gua: "泽风大过", guaCi: "栋桡，利有攸往，亨。", tuan: "大过，大者过也。栋桡，本末弱也。刚过而中，巽而说行，利有攸往，乃亨。大过之时义大矣哉！", xiang: "泽灭木，大过；君子以独立不惧，遁世无闷。", yao: ["藉用白茅，无咎", "枯杨生稊，老夫得其女妻", "栋桡，凶", "栋隆，吉，栋桡凶", "枯杨生华，老妇得其士夫，无咎无誉", "过涉之灭顶，凶"] },
+            "010011": { name: "坎", gua: "水风井", guaCi: "改邑不改井，无丧无得。往来井井。汔至亦未繘井，羸其瓶，凶。", tuan: "巽乎水而上水，井井而不穷也。改邑不改井，乃以刚中也。汔至亦未繘井，未有功也。羸其瓶，是以凶也。", xiang: "木上有水，井；君子以劳民劝相。", yao: ["井泥不食，旧井无禽", "井谷射鲋，瓮敝漏", "井渫不食，为我心恻，可用汲，王明，并受其福", "井甃，无咎", "井冽寒泉，食", "井收勿幕，有孚元吉"] },
+            "011011": { name: "困", gua: "泽水困", guaCi: "亨，贞，大人吉，无咎。有言不信。", tuan: "困，刚揜也。险以说，困而不失其所，亨，其唯君子乎？贞，大人吉，以刚中也。有言不信，尚口乃穷也。", xiang: "泽无水，困；君子以致命遂志。", yao: ["臀困于株木，入于幽谷，三岁不觌", "困于酒食，朱绂方来，利用享祀，征凶，无咎", "困于石，据于蒺藜，入于其宫，不见其妻，凶", "来徐徐，困于金车，吝，有终", "劓刖，困于赤绂，乃徐有说，利用祭祀", "困于葛藟，于臲卼，曰动悔有悔，征吉"] },
+            "100011": { name: "蛊", gua: "山风蛊", guaCi: "元亨，利涉大川。先甲三日，后甲三日。", tuan: "蛊，刚上而柔下，巽而止，蛊。蛊，元亨，而天下治也。利涉大川，往有事也。先甲三日，后甲三日，终则有始，天行也。", xiang: "山下有风，蛊；君子以振民育德。", yao: ["干父之蛊，有子，考无咎，厉终吉", "干母之蛊，不可贞", "干父之蛊，小有晦，无大咎", "裕父之蛊，往见吝", "干父之蛊，用誉", "不事王侯，高尚其事"] },
+            "101011": { name: "未济", gua: "火水未济", guaCi: "亨，小狐汔济，濡其尾，无攸利。", tuan: "未济，亨，柔得中也。小狐汔济，未出中也。濡其尾，无攸利，不续终也。虽不当位，刚柔应也。", xiang: "火在水上，未济；君子以慎辨物居方。", yao: ["濡其尾，吝", "曳其轮，贞吉", "未济，征凶，利涉大川", "吉，悔亡，震用伐鬼方", "贞吉，无悔，君子之光，有孚吉", "有孚于饮酒，无咎，濡其首，有孚失是"] },
+            "110011": { name: "鼎", gua: "火风鼎", guaCi: "元吉，亨。", tuan: "鼎，象也。以木巽火，亨饪也。圣人亨以享上帝，而大亨以养圣贤。巽而耳目聪明，柔进而上行，得中而应乎刚，是以元亨。", xiang: "木上有火，鼎；君子以正位凝命。", yao: ["鼎颠趾，利出否，得妾以其子，无咎", "鼎有实，我仇有疾，不我能即，吉", "鼎耳革，其行塞，雉膏不食，方雨亏悔，终吉", "鼎折足，覆公餗，其形渥，凶", "鼎黄耳，金铉，利贞", "鼎玉铉，大吉，无不利"] },
+            "111011": { name: "大畜", gua: "山天大畜", guaCi: "利贞，不家食吉，利涉大川。", tuan: "大畜，刚健笃实，辉光日新，其德刚上而尚贤，能止健，大正也。不家食吉，养贤也。利涉大川，应乎天也。", xiang: "天在山中，大畜；君子以多识前言往行，以畜其德。", yao: ["有厉，利已", "舆说輹", "良马逐，利艰贞，曰闲舆卫，利有攸往", "童牛之牿，元吉", "豶豕之牙，吉", "何天之衢，亨"] },
+            "000100": { name: "损", gua: "山泽损", guaCi: "有孚，元吉，无咎。可贞。利有攸往。曷之用？二簋可用享。", tuan: "损，损下益上，其道上行。损而有孚，元吉，无咎，可贞，利有攸往。曷之用？二簋可用享。二簋应有时，损刚益柔有时，损益盈虚，与时偕行。", xiang: "山下有泽，损；君子以惩忿窒欲。", yao: ["祀事遄往，无咎，酌损之", "利贞，益之，用凶事，无咎", "三人行则损一人，一人行则得其友", "损其疾，使遄有喜，无咎", "或益之，十朋之龟弗克违，元吉", "弗损益之，无咎，贞吉，利有攸往，得臣无家"] },
+            "001100": { name: "睽", gua: "火泽睽", guaCi: "小事吉。", tuan: "睽，火动而上，泽动而下；二女同居，其志不同行；说而丽乎明，柔进而上行，得中而应乎刚；是以小事吉。天地睽而其事同也，男女睽而其志通也，万物睽而其事类也，睽之时用大矣哉！", xiang: "上火下泽，睽；君子以同而异。", yao: ["见恶人，无咎", "遇主于巷，无咎", "见舆曳，其牛掣，其人天且劓，无初有终", "睽孤，遇元夫，交孚，厉无咎", "悔亡，厥宗噬肤，往有灾也", "无妄之灾，或系之牛，行人之得，邑人之灾"] },
+            "010100": { name: "中孚", gua: "风泽中孚", guaCi: "豚鱼吉。利涉大川，利贞。", tuan: "中孚，柔在内而刚得中，说而巽，孚乃化邦也。豚鱼吉，信及豚鱼也。利涉大川，乘木舟虚也。中孚以利贞，乃应乎天也。", xiang: "泽上有风，中孚；君子以议狱缓死。", yao: ["虞吉，有它不燕", "鹤鸣在阴，其子和之，我有好爵，吾与尔靡之", "得敌，或鼓或罢，或泣或歌", "月几望，马匹亡，绝类上", "有孚挛如，无咎", "翰音登于天，凶"] },
+            "011100": { name: "归妹", gua: "雷泽归妹", guaCi: "征凶，无攸利。", tuan: "归妹，天地之大义也。天地不交，而万物不兴。归妹，人之终始也。说以动，所归妹也。征凶，位不当也。无攸利，柔乘刚也。", xiang: "泽上有雷，归妹；君子以永终知敝。", yao: ["归妹以娣，跛能履，征吉", "眇能视，利幽人之贞", "归妹以须，反归以娣", "归妹愆期，迟归有时", "帝乙归妹，其君之袂，不如其娣之袂良，月几望，吉", "女承筐无实，士刲羊无血，无攸利"] },
+            "100100": { name: "渐", gua: "风山渐", guaCi: "女归吉，利贞。", tuan: "渐之进也，女归吉也。进得位，往有功也。进以正，可以正邦也。其位，刚得中也。止而巽，动不穷也。", xiang: "山上有木，渐；君子以居贤德善俗。", yao: ["鸿渐于干，小子厉，有言，无咎", "鸿渐于磐，饮食衎衎，吉", "鸿渐于陆，夫征不复，妇孕不育，凶", "鸿渐于木，或得其桷，无咎", "鸿渐于陵，妇三岁不孕，终莫之胜，吉", "鸿渐于陆，其羽可用为仪，吉"] },
+            "101100": { name: "旅", gua: "火山旅", guaCi: "小亨，旅贞吉。", tuan: "旅，小亨，柔得中乎外，而顺乎刚，止而丽乎明，是以小亨，旅贞吉也。旅之时义大矣哉！", xiang: "山上有火，旅；君子以明慎用刑，而不留狱。", yao: ["旅琐琐，斯其所取灾", "旅即次，怀其资，得童仆贞", "旅焚其次，丧其童仆，贞厉", "旅于处，得其资斧，我心不快", "射雉一矢亡，终以誉命", "鸟焚其巢，旅人先笑后号咷，丧牛于易，凶"] },
+            "110100": { name: "小畜", gua: "风天小畜", guaCi: "亨。密云不雨，自我西郊。", tuan: "小畜，柔得位而上下应之，曰小畜。健而巽，刚中而志行，乃亨。密云不雨，尚往也。自我西郊，施未行也。", xiang: "风行天上，小畜；君子以懿文德。", yao: ["复自道，何其咎，吉", "牵，吉", "舆说辐，夫妻反目", "有孚，血去惕出，无咎", "有孚挛如，富以其邻", "既雨既处，尚德载，妇贞厉。月几望，君子征凶"] },
+            "111100": { name: "需", gua: "水天需", guaCi: "有孚，光亨，贞吉。利涉大川。", tuan: "需，须也，险在前也。刚健而不陷，其义不困穷矣。需，有孚，光亨，贞吉，位乎天位，以正中也。利涉大川，往有功也。", xiang: "云上于天，需；君子以饮食宴乐。", yao: ["需于郊，利用恒，无咎", "需于沙，小有言，终吉", "需于泥，致寇至", "需于血，出自穴", "需于酒食，贞吉", "入于穴，有不速之客三人来，敬之终吉"] },
+            "000101": { name: "晋", gua: "火地晋", guaCi: "康侯用锡马蕃庶，昼日三接。", tuan: "晋，进也。明出地上，顺而丽乎大明，柔进而上行，是以康侯用锡马蕃庶，昼日三接也。", xiang: "明出地上，晋；君子以自昭明德。", yao: ["晋如，摧如，贞吉，罔孚，裕无咎", "晋如，愁如，贞吉。受兹介福，于其王母", "众允，悔亡", "晋如，硕鼠，贞厉", "悔亡，矢得勿恤，往吉，无不利", "晋其角，维用伐邑，厉吉，无咎，贞吝"] },
+            "001101": { name: "睽", gua: "火泽睽", guaCi: "小事吉。", tuan: "睽，火动而上，泽动而下；二女同居，其志不同行；说而丽乎明，柔进而上行，得中而应乎刚；是以小事吉。天地睽而其事同也，男女睽而其志通也，万物睽而其事类也，睽之时用大矣哉！", xiang: "上火下泽，睽；君子以同而异。", yao: ["见恶人，无咎", "遇主于巷，无咎", "见舆曳，其牛掣，其人天且劓，无初有终", "睽孤，遇元夫，交孚，厉无咎", "悔亡，厥宗噬肤，往有灾也", "无妄之灾，或系之牛，行人之得，邑人之灾"] },
+            "010101": { name: "解", gua: "雷水解", guaCi: "利西南。无所往，其来复吉。有攸往，夙吉。", tuan: "解，险以动，动而免乎险，解。解利西南，往得众也。其来复吉，乃得中也。有攸往，夙吉，往有功也。天地解而雷雨作，雷雨作而百果草木皆甲坼，解之时义大矣哉！", xiang: "雷雨作，解；君子以赦过宥罪。", yao: ["无咎", "田获三狐，得黄矢，贞吉", "负且乘，致寇至，贞吝", "解而拇，朋至斯孚", "有攸往，夙吉，往有功也", "公用射隼，于高墉之上，获之，无不利"] },
+            "011101": { name: "咸", gua: "泽山咸", guaCi: "亨利贞，取女吉。", tuan: "咸，感也。柔上而刚下，二气感应以相与，止而说，男下女，是以亨利贞，取女吉也。天地感而万物化生，圣人感人心而天下和平。观其所感，而天地万物之情可见矣！", xiang: "山上有泽，咸；君子以虚受人。", yao: ["咸其拇", "咸其腓，凶，居吉", "咸其股，执其随，往吝", "贞吉，悔亡，憧憧往来，朋从尔思", "咸其脢，无悔", "咸其辅颊舌"] },
+            "100101": { name: "蹇", gua: "水山蹇", guaCi: "利西南，不利东北。利见大人。贞吉。", tuan: "蹇，难也，险在前也。见险而能止，知矣哉！蹇，利西南，往得中也；不利东北，其道穷也。利见大人，往有功也。当位贞吉，以正邦也。蹇之时用大矣哉！", xiang: "山上有水，蹇；君子以反身修德。", yao: ["往蹇，来誉", "王臣蹇蹇，匪躬之故", "往蹇，来反", "往蹇，来连", "大赛，往吉，无不利", "往蹇，来硕吉，利见大人"] },
+            "101101": { name: "未济", gua: "火水未济", guaCi: "亨，小狐汔济，濡其尾，无攸利。", tuan: "未济，亨，柔得中也。小狐汔济，未出中也。濡其尾，无攸利，不续终也。虽不当位，刚柔应也。", xiang: "火在水上，未济；君子以慎辨物居方。", yao: ["濡其尾，吝", "曳其轮，贞吉", "未济，征凶，利涉大川", "吉，悔亡，震用伐鬼方", "贞吉，无悔，君子之光，有孚吉", "有孚于饮酒，无咎，濡其首，有孚失是"] },
+            "110101": { name: "蒙", gua: "山水蒙", guaCi: "亨，匪我求童蒙，童蒙求我。初筮告，再三渎，渎则不告。利贞。", tuan: "蒙，山下有险，险而止，蒙。蒙，亨，以亨行时中也。匪我求童蒙，童蒙求我，志应也。初筮告，以刚中也。再三渎，渎则不告，渎蒙也。蒙以养正，圣功也。", xiang: "山下出泉，蒙；君子以果行育德。", yao: ["发蒙，利用刑人，用说桎梏以往，吝", "包蒙，吉；纳妇吉，子克家", "勿用取女，见金夫，不有躬，无攸利", "困蒙，吝", "童蒙，吉", "击蒙，不利为寇，利御寇"] },
+            "111101": { name: "涣", gua: "风水涣", guaCi: "亨，王假有庙。利涉大川，利贞。", tuan: "涣，亨，刚来而不穷，柔得位乎外而上同。王假有庙，王乃在中也。利涉大川，乘木有功也。", xiang: "风行水上，涣；先王以享于帝立庙。", yao: ["用拯马壮，吉", "涣奔其机，悔亡", "涣其躬，无悔", "涣其群，元吉，涣有丘，匪夷所思", "涣汗其大号，涣王居，无咎", "涣其血，去逖出，无咎"] },
+            "000110": { name: "大壮", gua: "雷天大壮", guaCi: "利贞。", tuan: "大壮，大者壮也。刚以动，故壮。大壮利贞，大者正也。正大而天地之情可见矣！", xiang: "雷在天上，大壮；君子以非礼勿履。", yao: ["壮于趾，征凶，有孚", "贞吉", "小人用壮，君子用罔，贞厉", "童羊角，小人用壮，君子用罔", "丧羊于易无悔", "羝羊触藩，不能退，不能遂，无攸利，艰则吉"] },
+            "001110": { name: "归妹", gua: "雷泽归妹", guaCi: "征凶，无攸利。", tuan: "归妹，天地之大义也。天地不交，而万物不兴。归妹，人之终始也。说以动，所归妹也。征凶，位不当也。无攸利，柔乘刚也。", xiang: "泽上有雷，归妹；君子以永终知敝。", yao: ["归妹以娣，跛能履，征吉", "眇能视，利幽人之贞", "归妹以须，反归以娣", "归妹愆期，迟归有时", "帝乙归妹，其君之袂，不如其娣之袂良，月几望，吉", "女承筐无实，士刲羊无血，无攸利"] },
+            "010110": { name: "泰", gua: "天地泰", guaCi: "小往大来，吉亨。", tuan: "泰，小往大来，吉亨，则是天地交而万物通也，上下交而其志同也。内阳而外健，内君子而外小人，君子道长，小人道消也。", xiang: "天地交，泰；后以财成天地之道，辅相天地之宜，以左右民。", yao: ["拔茅茹，以其汇，征吉", "包荒，用冯河，不遐遗，朋亡，得尚于中行", "无平不陂，无往不复，艰贞无咎。勿恤其孚，于食有福", "翩翩，不富以其邻，不戒以孚", "帝乙归妹，以祉元吉", "城复于隍，勿用师，自邑告命，贞吝"] },
+            "011110": { name: "履", gua: "天泽履", guaCi: "履虎尾，不咥人，亨。", tuan: "履，柔履刚也。说而应乎乾，是以履虎尾，不咥人，亨。刚中正，履帝位而不疚，光明也。", xiang: "上天下泽，履；君子以辨上下，定民志。", yao: ["素履，往无咎", "幽人贞吉", "眇能视，跛能履，履虎尾，咥人，凶", "履虎尾，愬愬，终吉", "夬履，贞厉", "元吉在上，大有庆也"] },
+            "100110": { name: "谦", gua: "地山谦", guaCi: "亨，君子有终。", tuan: "谦，亨，天道下济而光明，地道卑而上行。天道亏盈而益谦，地道变盈而流谦，鬼神害盈而福谦，人道恶盈而好谦。谦尊而光，卑而不可逾，君子之终也。", xiang: "地中有山，谦；君子以裒多益寡，称物平施。", yao: ["谦谦君子，卑以自牧也", "鸣谦，贞吉", "劳谦君子，万民服也", "无不利，㧑谦", "不富以其邻，利用侵伐，无不利", "鸣谦，志未得也，可用行师，征邑国也"] },
+            "101110": { name: "否", gua: "天地否", guaCi: "否之匪人，不利君子贞，大往小来。", tuan: "否之匪人，不利君子贞，大往小来，则是天地不交而万物不通也，上下不交而天下无邦也。内阴而外健，内小人而外君子，小人道长，君子道消也。", xiang: "天地不交，否；君子以俭德辟难，不可荣以禄。", yao: ["拔茅茹，以其汇，贞吉亨", "包承，小人吉，大人否亨", "包羞", "有命无咎，畴离祉", "休否，大人吉。其亡其亡，系于苞桑", "倾否，先否后喜"] },
+            "110110": { name: "同人", gua: "天火同人", guaCi: "同人于野，亨。利涉大川，利君子贞。", tuan: "同人，柔得位得中，而应乎乾，曰同人。同人于野，亨，利涉大川，乾行也。文明以健，中正而应，君子正也。唯君子为能通天下之志。", xiang: "天与火，同人；君子以类族辨物。", yao: ["同人于门，无咎", "同人于宗，吝", "伏戎于莽，升其高陵，三岁不兴", "乘其墉，弗克攻，吉", "同人，先号咷而后笑，大师克相遇", "同人于郊，无悔"] },
+            "111110": { name: "大有", gua: "火天大有", guaCi: "元亨。", tuan: "大有，柔得尊位，大中而上下应之，曰大有。其德刚健而文明，应乎天而时行，是以元亨。", xiang: "火在天上，大有；君子以遏恶扬善，顺天休命。", yao: ["无交害，匪咎，艰则无咎", "大车以载，有攸往，无咎", "公用亨于天子，小人弗克", "匪其彭，无咎", "厥孚交如，威如，吉", "自天佑之，吉无不利"] },
+            "000111": { name: "夬", gua: "泽天夬", guaCi: "扬于王庭，孚号有厉。告自邑，不利即戎。利有攸往。", tuan: "夬，决也，刚决柔也。健而说，决而和，扬于王庭，柔乘五刚也。孚号有厉，其危乃光也。告自邑，不利即戎，所尚乃穷也。利有攸往，刚长乃终也。", xiang: "泽上于天，夬；君子以施禄及下，居德则忌。", yao: ["壮于前趾，往不胜，为咎", "惕号，莫夜有戎，勿恤", "臀部无肤，其行次且，牵羊悔亡，闻言不信", "闻言不信，聪不蔽也", "苋陆夬夬，中行无咎", "无号之凶，终不可长也"] },
+            "001111": { name: "萃", gua: "泽地萃", guaCi: "亨，利贞。用大牲吉。利有攸往。", tuan: "萃，聚也。顺以说，刚中而应，故聚也。王假有庙，致孝享也。利贞，用大牲吉，顺以动也。利有攸往，顺以动而聚。观其所聚，而天地万物之情可见矣。", xiang: "泽上于地，萃；君子以除戎器，戒不虞。", yao: ["乃乱乃萃，若号，一握为笑，勿恤，往无咎", "引吉，无咎，孚乃利用禴", "萃如，嗟如，无攸利，往无咎，小吝", "大吉，无咎", "萃有位，无咎，匪孚，元永贞，悔亡", "赍咨涕夷，无咎"] },
+            "010111": { name: "困", gua: "泽水困", guaCi: "亨，贞，大人吉，无咎。有言不信。", tuan: "困，刚揜也。险以说，困而不失其所，亨，其唯君子乎？贞，大人吉，以刚中也。有言不信，尚口乃穷也。", xiang: "泽无水，困；君子以致命遂志。", yao: ["臀困于株木，入于幽谷，三岁不觌", "困于酒食，朱绂方来，利用享祀，征凶，无咎", "困于石，据于蒺藜，入于其宫，不见其妻，凶", "来徐徐，困于金车，吝，有终", "劓刖，困于赤绂，乃徐有说，利用祭祀", "困于葛藟，于臲卼，曰动悔有悔，征吉"] },
+            "011111": { name: "革", gua: "泽火革", guaCi: "巳日乃孚，元亨利贞，悔亡。", tuan: "革，水火相息，二女同居，其志不相得，曰革。巳日乃孚，革而信之。文明以说，大亨以正。革而当，其悔乃亡。天地革而四时成，汤武革命，顺乎天而应乎人，革之时义大矣哉！", xiang: "泽中有火，革；君子以治历明时。", yao: ["巩用黄牛之革", "巳日乃革之，征吉，无咎", "征凶，贞厉，革言三就，有孚", "悔亡，有孚改命，吉", "大人虎变，未占有孚", "君子豹变，小人革面，征凶，居贞吉"] },
+            "100111": { name: "讼", gua: "天水讼", guaCi: "有孚，窒惕，中吉，终凶。利见大人。不利涉大川。", tuan: "讼，上刚下险，险而健，讼。讼，有孚，窒惕，中吉，刚来而得中也。终凶，讼不可成也。利见大人，尚中正也。不利涉大川，入于渊也。", xiang: "天与水违行，讼；君子以作事谋始。", yao: ["不永所事，小有言，终吉", "食旧德，贞厉，终吉，或从王事，无成", "不克讼，归而逋其邑人三百户，无眚", "食旧德，贞厉，终吉，或从王事，无成", "讼，元吉", "朝服之旗，大带飘荡"] },
+            "101111": { name: "遁", gua: "天山遁", guaCi: "亨，小利贞。", tuan: "遁，亨，遁而亨也。刚当位而应，与时行也。小利贞，浸而长也。遁之时义大矣哉！", xiang: "天下有山，遁；君子以远小人，不恶而严。", yao: ["遁尾，厉，勿用有攸往", "执之用黄牛之革，莫之胜说", "系遁，有疾厉，畜臣妾吉", "好遁，君子吉，小人否", "嘉遁，贞吉", "肥遁，无不利"] },
+            "110111": { name: "咸", gua: "泽山咸", guaCi: "亨利贞，取女吉。", tuan: "咸，感也。柔上而刚下，二气感应以相与，止而说，男下女，是以亨利贞，取女吉也。天地感而万物化生，圣人感人心而天下和平。观其所感，而天地万物之情可见矣！", xiang: "山上有泽，咸；君子以虚受人。", yao: ["咸其拇", "咸其腓，凶，居吉", "咸其股，执其随，往吝", "贞吉，悔亡，憧憧往来，朋从尔思", "咸其脢，无悔", "咸其辅颊舌"] },
+            "111111": { name: "乾", gua: "乾为天", guaCi: "元亨利贞。", tuan: "大哉乾元，万物资始，乃统天。云行雨施，品物流形。大明终始，六位时成，时乘六龙以御天。乾道变化，各正性命，保合大和，乃利贞。首出庶物，万国咸宁。", xiang: "天行健，君子以自强不息。", yao: ["潜龙勿用", "见龙在田，利见大人", "君子终日乾乾，夕惕若厉，无咎", "或跃在渊，无咎", "飞龙在天，利见大人", "亢龙有悔", "见群龙无首，吉"] }
+        };
+
+        let currentRound = 0;
+        let hexagramResults = [];
+        let gameState = 'idle';
+
+        const turtleTop = document.getElementById('turtleTop');
+        const turtleBottom = document.getElementById('turtleBottom');
+        const turtleContainer = document.getElementById('turtleContainer');
+        const coin1 = document.getElementById('coin1');
+        const coin2 = document.getElementById('coin2');
+        const coin3 = document.getElementById('coin3');
+        const stepIndicator = document.getElementById('stepIndicator');
+        const mainButtons = document.getElementById('mainButtons');
+        const actionButtons = document.getElementById('actionButtons');
+        const continueButtons = document.getElementById('continueButtons');
+        const restartButtons = document.getElementById('restartButtons');
+        const startBtn = document.getElementById('startBtn');
+        const shakeBtn = document.getElementById('shakeBtn');
+        const openBtn = document.getElementById('openBtn');
+        const nextRoundBtn = document.getElementById('nextRoundBtn');
+        const restartBtn = document.getElementById('restartBtn');
+        const resultDisplay = document.getElementById('resultDisplay');
+        const resultSymbol = document.getElementById('resultSymbol');
+        const resultText = document.getElementById('resultText');
+        const roundNum = document.getElementById('roundNum');
+        const hexagramDisplay = document.getElementById('hexagramDisplay');
+        const benGuaLines = document.getElementById('benGuaLines');
+        const zhiGuaLines = document.getElementById('zhiGuaLines');
+        const divinationResult = document.getElementById('divinationResult');
+
+        startBtn.addEventListener('click', startDivination);
+        shakeBtn.addEventListener('click', shakeTurtle);
+        openBtn.addEventListener('click', openTurtle);
+        nextRoundBtn.addEventListener('click', nextRound);
+        restartBtn.addEventListener('click', resetGame);
+
+        function startDivination() {
+            gameState = 'covered';
+            mainButtons.classList.add('hidden');
+            actionButtons.classList.remove('hidden');
+            stepIndicator.textContent = '第 1 爻：请摇动龟壳';
+            turtleTop.classList.remove('open');
+            turtleBottom.classList.remove('open');
+            hexagramDisplay.classList.add('hidden');
+            divinationResult.classList.remove('visible');
+            resultDisplay.classList.remove('visible');
+            benGuaLines.innerHTML = '';
+            zhiGuaLines.innerHTML = '';
+        }
+
+        function shakeTurtle() {
+            if (gameState !== 'covered') return;
+            gameState = 'shaking';
+            shakeBtn.disabled = true;
+            openBtn.disabled = true;
+            turtleContainer.classList.add('shaking');
+            
+            const coins = [coin1, coin2, coin3];
+            setTimeout(() => {
+                coins.forEach((coin) => {
+                    if (Math.random() > 0.5) {
+                        coin.classList.add('flip');
+                    } else {
+                        coin.classList.remove('flip');
+                    }
+                });
+            }, 500);
+
+            setTimeout(() => {
+                turtleContainer.classList.remove('shaking');
+                gameState = 'covered';
+                shakeBtn.disabled = false;
+                openBtn.disabled = false;
+                stepIndicator.textContent = '摇动结束，请打开龟壳查看';
+            }, 2000);
+        }
+
+        function openTurtle() {
+            if (gameState !== 'shaking' && gameState !== 'covered') return;
+            gameState = 'opened';
+            
+            turtleTop.classList.add('open');
+            turtleBottom.classList.add('open');
+            
+            const coins = [coin1, coin2, coin3];
+            let headsCount = 0;
+            coins.forEach(coin => {
+                if (!coin.classList.contains('flip')) headsCount++;
+            });
+            
+            let result, symbol, isOldYin = false, isOldYang = false;
+            
+            if (headsCount === 3) {
+                result = '老阳';
+                symbol = '○—';
+                isOldYang = true;
+            } else if (headsCount === 2) {
+                result = '少阳';
+                symbol = '—';
+            } else if (headsCount === 1) {
+                result = '少阴';
+                symbol = '— —';
+            } else {
+                result = '老阴';
+                symbol = '×— —';
+                isOldYin = true;
+            }
+            
+            const lineValue = (result === '老阳' || result === '少阳') ? 1 : 0;
+            hexagramResults.push({
+                value: lineValue,
+                isOld: isOldYang || isOldYin,
+                text: result,
+                symbol: symbol
+            });
+            
+            roundNum.textContent = currentRound + 1;
+            resultSymbol.textContent = symbol;
+            resultText.textContent = result;
+            resultDisplay.classList.add('visible');
+            
+            updateHexagramDisplay();
+            
+            actionButtons.classList.add('hidden');
+            
+            if (currentRound < 5) {
+                continueButtons.classList.remove('hidden');
+                nextRoundBtn.textContent = '下一爻';
+                stepIndicator.textContent = '第 ' + (currentRound + 2) + ' 爻';
+            } else {
+                gameState = 'finished';
+                continueButtons.classList.remove('hidden');
+                nextRoundBtn.textContent = '查看卦解';
+                stepIndicator.textContent = '六爻已成，请查看卦解';
+            }
+        }
+
+        function updateHexagramDisplay() {
+            hexagramDisplay.classList.remove('hidden');
+            benGuaLines.innerHTML = '';
+            zhiGuaLines.innerHTML = '';
+            
+            hexagramResults.forEach((line, index) => {
+                const lineEl = document.createElement('div');
+                lineEl.className = 'hexagram-line';
+                
+                if (line.value === 1) {
+                    lineEl.innerHTML = `
+                        <div class="line-segment"></div>
+                        <div class="line-space"></div>
+                        <div class="line-segment"></div>
+                        ${line.isOld ? '<span class="line-marker">○</span>' : ''}
+                    `;
+                } else {
+                    lineEl.innerHTML = `
+                        <div class="line-segment-broken"></div>
+                        <div class="line-space"></div>
+                        <div class="line-segment-broken"></div>
+                        ${line.isOld ? '<span class="line-marker">×</span>' : ''}
+                    `;
+                }
+                
+                benGuaLines.appendChild(lineEl);
+                
+                setTimeout(() => {
+                    lineEl.classList.add('visible');
+                }, index * 200);
+            });
+            
+            setTimeout(() => {
+                const zhiResults = hexagramResults.map(line => {
+                    if (line.isOld) {
+                        return { ...line, value: line.value === 1 ? 0 : 1 };
+                    }
+                    return { ...line };
+                });
+                
+                zhiResults.forEach((line, index) => {
+                    const lineEl = document.createElement('div');
+                    lineEl.className = 'hexagram-line';
+                    
+                    if (line.value === 1) {
+                        lineEl.innerHTML = `
+                            <div class="line-segment"></div>
+                            <div class="line-space"></div>
+                            <div class="line-segment"></div>
+                        `;
+                    } else {
+                        lineEl.innerHTML = `
+                            <div class="line-segment-broken"></div>
+                            <div class="line-space"></div>
+                            <div class="line-segment-broken"></div>
+                        `;
+                    }
+                    
+                    zhiGuaLines.appendChild(lineEl);
+                    
+                    setTimeout(() => {
+                        lineEl.classList.add('visible');
+                    }, index * 200);
+                });
+            }, 600);
+        }
+
+        function nextRound() {
+            if (currentRound < 5) {
+                currentRound++;
+                
+                const coins = [coin1, coin2, coin3];
+                coins.forEach(coin => coin.classList.remove('flip'));
+                
+                turtleTop.classList.remove('open');
+                turtleBottom.classList.remove('open');
+                
+                continueButtons.classList.add('hidden');
+                actionButtons.classList.remove('hidden');
+                shakeBtn.disabled = false;
+                openBtn.disabled = true;
+                gameState = 'covered';
+                
+                resultDisplay.classList.remove('visible');
+            } else {
+                showDivinationResult();
+            }
+        }
+
+function showDivinationResult() {
+            continueButtons.classList.add('hidden');
+            restartButtons.classList.remove('hidden');
+            
+            const benGuaKey = hexagramResults.map(r => r.value).join('');
+            const zhiResults = hexagramResults.map(line => {
+                if (line.isOld) return line.value === 1 ? 0 : 1;
+                return line.value;
+            });
+            const zhiGuaKey = zhiResults.join('');
+            
+            const benHex = HEXAGRAMS[benGuaKey];
+            const zhiHex = HEXAGRAMS[zhiGuaKey];
+            
+            const dynamicLines = hexagramResults.map((r, i) => r.isOld ? i : -1).filter(i => i >= 0);
+            const dynamicCount = dynamicLines.length;
+            
+            const yaoNames = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+            const dynamicYaoNames = dynamicLines.map(i => yaoNames[i]);
+            const dynamicText = dynamicCount > 0 ? dynamicYaoNames.join('、') + '为动爻' : '六爻安静';
+            
+            let html = '<div class="divination-hexagrams">';
+            html += '<div class="divination-hexagram"><div class="divination-hexagram-name">' + (benHex ? benHex.name : '?') + '</div><div class="divination-hexagram-gua">' + (benHex ? benHex.gua : '') + '</div></div>';
+            html += '<div class="divination-hexagram"><div class="divination-hexagram-name">' + (zhiHex ? zhiHex.name : '?') + '</div><div class="divination-hexagram-gua">' + (zhiHex ? zhiHex.gua : '') + '</div></div>';
+            html += '</div>';
+            
+            html += '<div class="divination-analysis">';
+            html += '<div class="analysis-title">断卦分析（朱熹古法）</div>';
+            html += '<div class="analysis-intro">';
+            html += '<p><strong>本卦（' + (benHex ? benHex.gua : '') + '）</strong>：现状、主体，内因、事情本质</p>';
+            html += '<p><strong>之卦（' + (zhiHex ? zhiHex.gua : '') + '）</strong>：结果、趋势、结局</p>';
+            html += '<p><strong>动爻数量：' + dynamicCount + '个</strong>（' + dynamicText + '）</p>';
+            html += '</div>';
+            
+            let mainFocus = '';
+            let secondaryFocus = '';
+            let conclusion = '';
+            let analysisText = '';
+            
+            if (dynamicCount === 0) {
+                mainFocus = '本卦卦辞、卦象';
+                secondaryFocus = '无之卦意义';
+                conclusion = '局势稳定、少变化，吉凶以本卦卦辞为主';
+                analysisText = '<p><strong>判断：</strong>六爻安静，局势稳定，少有变化。</p><p><strong>主看：</strong>本卦《' + (benHex ? benHex.gua : '') + '》卦辞</p><p><strong>含义：</strong>当前事情处于相对稳定的状态，宜静不宜妄动，以本卦卦象世爻用神为主论断吉凶。</p>';
+            } else if (dynamicCount === 1) {
+                const dynIdx = dynamicLines[0];
+                mainFocus = '本卦 + 动爻(' + yaoNames[dynIdx] + ')';
+                secondaryFocus = '之卦（看结果）';
+                conclusion = '本卦为现状，动爻为转折点，之卦为最终结局';
+                analysisText = '<p><strong>判断：</strong>一爻动，最为常见，为事情的关键转折点。</p><p><strong>主看：</strong>本卦《' + (benHex ? benHex.gua : '') + '》卦辞 + ' + yaoNames[dynIdx] + '（' + hexagramResults[dynIdx].text + '）</p><p><strong>次看：</strong>之卦《' + (zhiHex ? zhiHex.gua : '') + '》卦辞</p><p><strong>含义：</strong>本卦代表当前现状，动爻(' + yaoNames[dynIdx] + ')是事件发展的关键转折点，之卦预示最终结局。</p>';
+            } else if (dynamicCount === 2) {
+                const upperIdx = Math.max.apply(null, dynamicLines);
+                const lowerIdx = Math.min.apply(null, dynamicLines);
+                mainFocus = '本卦 + 上面动爻(' + yaoNames[upperIdx] + ')';
+                secondaryFocus = '下面动爻(' + yaoNames[lowerIdx] + ') + 之卦';
+                conclusion = '以本卦上面动爻为主，之卦看最终走向';
+                analysisText = '<p><strong>判断：</strong>二爻动，以「上面那个动爻」为主。</p><p><strong>主看：</strong>本卦' + yaoNames[upperIdx] + '（' + hexagramResults[upperIdx].text + '）</p><p><strong>次看：</strong>本卦' + yaoNames[lowerIdx] + '（' + hexagramResults[lowerIdx].text + '）+ 之卦《' + (zhiHex ? zhiHex.gua : '') + '》</p><p><strong>含义：</strong>本卦为体，两个动爻代表事态变化的两个关键节点，上方动爻影响更大，之卦显示最终变化方向。</p>';
+            } else if (dynamicCount === 3) {
+                mainFocus = '本卦卦辞';
+                secondaryFocus = '之卦卦辞';
+                conclusion = '本卦为体，之卦为用，综合判断';
+                analysisText = '<p><strong>判断：</strong>三爻动，阴阳力量均衡，以本卦卦辞为主，参考之卦。</p><p><strong>主看：</strong>本卦《' + (benHex ? benHex.gua : '') + '》卦辞</p><p><strong>次看：</strong>之卦《' + (zhiHex ? zhiHex.gua : '') + '》卦辞</p><p><strong>含义：</strong>本卦为体（内在本质），之卦为用（外在表现），需两者结合综合判断吉凶趋势。</p>';
+            } else if (dynamicCount === 4) {
+                const staticInZhi = zhiResults.map((v, i) => !hexagramResults[i].isOld ? i : -1).filter(i => i >= 0);
+                const lowerStatic = Math.min.apply(null, staticInZhi);
+                mainFocus = '之卦中的静爻';
+                secondaryFocus = '本卦';
+                conclusion = '动多静少，以之卦中静爻为核心判断';
+                analysisText = '<p><strong>判断：</strong>四爻动，动多静少，以静爻为主。</p><p><strong>主看：</strong>之卦中' + yaoNames[lowerStatic] + '（之卦为' + (zhiResults[lowerStatic] === 1 ? '阳' : '阴') + '）</p><p><strong>次看：</strong>本卦《' + (benHex ? benHex.gua : '') + '》</p><p><strong>含义：</strong>四爻皆动表示事态剧变，本卦已发生根本转变。之卦中两个静爻是仅存的稳定因素，以下静爻为核心论断。</p>';
+            } else if (dynamicCount === 5) {
+                const staticInZhi = zhiResults.map((v, i) => !hexagramResults[i].isOld ? i : -1).filter(i => i >= 0);
+                mainFocus = '之卦唯一静爻(' + yaoNames[staticInZhi[0]] + ')';
+                secondaryFocus = '本卦';
+                conclusion = '静爻为结局关键，抓住核心不变因素';
+                analysisText = '<p><strong>判断：</strong>五爻动，仅一爻静，此静爻为结局关键。</p><p><strong>主看：</strong>之卦' + yaoNames[staticInZhi[0]] + '（静爻，之卦为' + (zhiResults[staticInZhi[0]] === 1 ? '阳' : '阴') + '）</p><p><strong>次看：</strong>本卦《' + (benHex ? benHex.gua : '') + '》</p><p><strong>含义：</strong>五爻皆动，仅存的静爻是全局稳定的核心，抓住这一点便能把握最终结局。</p>';
+            } else if (dynamicCount === 6) {
+                mainFocus = '之卦';
+                secondaryFocus = '乾坤卦用九/用六';
+                conclusion = '六爻全动，旧局全变，全新开始';
+                const isQian = benGuaKey === '111111';
+                const isKun = benGuaKey === '000000';
+                var extraText = '';
+                if (isQian) extraText += '<p><strong>附加：</strong>《乾》卦用九「群龙无首，吉」</p>';
+                if (isKun) extraText += '<p><strong>附加：</strong>《坤》卦用六「利永贞」</p>';
+                analysisText = '<p><strong>判断：</strong>六爻全动，天地大变，全新开始。</p><p><strong>主看：</strong>之卦《' + (zhiHex ? zhiHex.gua : '') + '》</p>' + extraText + '<p><strong>含义：</strong>本卦六爻尽变，事态发生根本性转变。旧格局彻底打破，全新局面正在展开。' + (isQian ? '乾为天用九，群龙无首乃大吉之象。' : '') + (isKun ? '坤为地用六，利在永久中正。' : '') + '</p>';
+            }
+            
+            html += '<div class="analysis-body">';
+            html += '<p><strong>主看：</strong>' + mainFocus + '</p>';
+            html += '<p><strong>次看：</strong>' + secondaryFocus + '</p>';
+            html += '<p><strong>结论方向：</strong>' + conclusion + '</p>';
+            html += analysisText;
+            html += '</div></div>';
+            
+            if (benHex) {
+                html += '<div class="divination-content">';
+                html += '<h3>本卦 · ' + benHex.gua + '</h3>';
+                html += '<p><strong>卦辞：</strong>' + benHex.guaCi + '</p>';
+                if (benHex.tuan) html += '<p><strong>彖传：</strong>' + benHex.tuan + '</p>';
+                if (benHex.xiang) html += '<p><strong>象传：</strong>' + benHex.xiang + '</p>';
+                html += '<p><strong>六爻：</strong><br>';
+                if (benHex.yao) {
+                    benHex.yao.forEach(function(y, i) {
+                        var marker = hexagramResults[i].isOld ? (hexagramResults[i].value === 1 ? '○' : '×') : '';
+                        html += yaoNames[i] + marker + '：' + y + '<br>';
+                    });
+                }
+                html += '</p></div>';
+            }
+            
+            if (zhiHex) {
+                html += '<div class="divination-content">';
+                html += '<h3>之卦 · ' + zhiHex.gua + '</h3>';
+                html += '<p><strong>卦辞：</strong>' + zhiHex.guaCi + '</p>';
+                if (zhiHex.xiang) html += '<p><strong>象传：</strong>' + zhiHex.xiang + '</p>';
+                html += '</div>';
+            }
+            
+            divinationResult.innerHTML = html;
+            divinationResult.classList.add('visible');
+            stepIndicator.textContent = (dynamicCount === 0 ? '六爻安静' : dynamicCount + '个动爻') + ' · 本卦' + (benHex ? benHex.gua : '') + ' · 之卦' + (zhiHex ? zhiHex.gua : '');
+        }
+
+        function resetGame() {
+            currentRound = 0;
+            hexagramResults = [];
+            gameState = 'idle';
+            
+            const coins = [coin1, coin2, coin3];
+            coins.forEach(coin => coin.classList.remove('flip'));
+            
+            turtleTop.classList.remove('open');
+            turtleBottom.classList.remove('open');
+            
+            hexagramDisplay.classList.add('hidden');
+            divinationResult.classList.remove('visible');
+            resultDisplay.classList.remove('visible');
+            
+            restartButtons.classList.add('hidden');
+            actionButtons.classList.add('hidden');
+            mainButtons.classList.remove('hidden');
+            
+            stepIndicator.textContent = '点击下方按钮开始卜卦';
+        }
+    </script>
+</body>
+</html>
