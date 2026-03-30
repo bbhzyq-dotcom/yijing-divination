@@ -412,6 +412,51 @@
             text-indent: 2em;
         }
         
+        .divination-analysis {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.3), rgba(26, 26, 46, 0.8));
+            border: 1px solid var(--jin-se);
+            border-radius: 12px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        
+        .analysis-title {
+            color: var(--jin-se);
+            font-size: 1.4rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 20px;
+            letter-spacing: 0.2em;
+            text-shadow: 0 0 20px rgba(212, 175, 55, 0.4);
+        }
+        
+        .analysis-intro {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .analysis-intro p {
+            margin: 8px 0;
+            text-indent: 0;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .analysis-body {
+            margin-top: 15px;
+        }
+        
+        .analysis-body p {
+            margin: 10px 0;
+            text-indent: 0;
+            color: rgba(255, 255, 255, 0.85);
+        }
+        
+        .analysis-body strong {
+            color: var(--jin-se);
+        }
+        
         .hidden {
             display: none !important;
         }
@@ -791,20 +836,116 @@
             const benHex = HEXAGRAMS[benGuaKey];
             const zhiHex = HEXAGRAMS[zhiGuaKey];
             
+            const dynamicLines = hexagramResults.map((r, i) => r.isOld ? i : -1).filter(i => i >= 0);
+            const dynamicCount = dynamicLines.length;
+            
+            const yaoNames = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
+            const dynamicYaoNames = dynamicLines.map(i => yaoNames[i]);
+            
             let html = '<div class="divination-hexagrams">';
             html += `<div class="divination-hexagram"><div class="divination-hexagram-name">${benHex ? benHex.name : '?'}</div><div class="divination-hexagram-gua">${benHex ? benHex.gua : ''}</div></div>`;
             html += `<div class="divination-hexagram"><div class="divination-hexagram-name">${zhiHex ? zhiHex.name : '?'}</div><div class="divination-hexagram-gua">${zhiHex ? zhiHex.gua : ''}</div></div>`;
+            html += '</div>';
+            
+            html += '<div class="divination-analysis">';
+            html += `<div class="analysis-title">断卦分析（朱熹古法）</div>`;
+            html += `<div class="analysis-intro">`;
+            html += `<p><strong>本卦（${benHex ? benHex.gua : ''}）</strong>：现状、主体、内因、事情本质</p>`;
+            html += `<p><strong>之卦（${zhiHex ? zhiHex.gua : ''}）</strong>：结果、趋势、结局</p>`;
+            html += `<p><strong>动爻数量：${dynamicCount}个</strong>（${dynamicCount > 0 ? dynamicYaoNames.join('、') + '为动爻' : '六爻安静'）</p>`;
+            html += `</div>`;
+            
+            let mainFocus = '';
+            let secondaryFocus = '';
+            let conclusion = '';
+            let analysisText = '';
+            
+            if (dynamicCount === 0) {
+                mainFocus = '本卦卦辞、卦象';
+                secondaryFocus = '无之卦意义';
+                conclusion = '局势稳定、少变化，吉凶以本卦卦辞为主';
+                analysisText = `<p><strong>判断：</strong>六爻安静，局势稳定，少有变化。</p>
+                    <p><strong>主看：</strong>本卦《${benHex ? benHex.gua : ''}》卦辞</p>
+                    <p><strong>含义：</strong>当前事情处于相对稳定的状态，宜静不宜妄动，以本卦卦象世爻用神为主论断吉凶。</p>`;
+            } else if (dynamicCount === 1) {
+                const dynIdx = dynamicLines[0];
+                mainFocus = `本卦 + 动爻(${yaoNames[dynIdx]})`;
+                secondaryFocus = '之卦（看结果）';
+                conclusion = '本卦为现状，动爻为转折点，之卦为最终结局';
+                analysisText = `<p><strong>判断：</strong>一爻动，最为常见，为事情的关键转折点。</p>
+                    <p><strong>主看：</strong>本卦《${benHex ? benHex.gua : ''}》卦辞 + ${yaoNames[dynIdx]}（${hexagramResults[dynIdx].text}）</p>
+                    <p><strong>次看：</strong>之卦《${zhiHex ? zhiHex.gua : ''》卦辞</p>
+                    <p><strong>含义：</strong>本卦代表当前现状，动爻(${yaoNames[dynIdx]})是事件发展的关键转折点，之卦预示最终结局。</p>`;
+            } else if (dynamicCount === 2) {
+                const upperIdx = Math.max(...dynamicLines);
+                const lowerIdx = Math.min(...dynamicLines);
+                mainFocus = `本卦 + 上面动爻(${yaoNames[upperIdx]})`;
+                secondaryFocus = `下面动爻(${yaoNames[lowerIdx]}) + 之卦`;
+                conclusion = '以本卦上面动爻为主，之卦看最终走向';
+                analysisText = `<p><strong>判断：</strong>二爻动，以「上面那个动爻」为主。</p>
+                    <p><strong>主看：</strong>本卦${yaoNames[upperIdx]}（${hexagramResults[upperIdx].text}）</p>
+                    <p><strong>次看：</strong>本卦${yaoNames[lowerIdx]}（${hexagramResults[lowerIdx].text}）+ 之卦《${zhiHex ? zhiHex.gua : ''}》</p>
+                    <p><strong>含义：</strong>本卦为体，两个动爻代表事态变化的两个关键节点，上方动爻影响更大，之卦显示最终变化方向。</p>`;
+            } else if (dynamicCount === 3) {
+                mainFocus = '本卦卦辞';
+                secondaryFocus = '之卦卦辞';
+                conclusion = '本卦为体，之卦为用，综合判断';
+                analysisText = `<p><strong>判断：</strong>三爻动，阴阳力量均衡，以本卦卦辞为主，参考之卦。</p>
+                    <p><strong>主看：</strong>本卦《${benHex ? benHex.gua : ''}》卦辞</p>
+                    <p><strong>次看：</strong>之卦《${zhiHex ? zhiHex.gua : ''}》卦辞</p>
+                    <p><strong>含义：</strong>本卦为体（内在本质），之卦为用（外在表现），需两者结合综合判断吉凶趋势。</p>`;
+            } else if (dynamicCount === 4) {
+                const staticInZhi = zhiResults.map((v, i) => !hexagramResults[i].isOld ? i : -1).filter(i => i >= 0);
+                const lowerStatic = Math.min(...staticInZhi);
+                mainFocus = '之卦中的静爻';
+                secondaryFocus = `本卦`;
+                conclusion = '动多静少，以之卦中静爻为核心判断';
+                analysisText = `<p><strong>判断：</strong>四爻动，动多静少，以静爻为主。</p>
+                    <p><strong>主看：</strong>之卦中${yaoNames[lowerStatic]}（之卦为${zhiResults[lowerStatic] === 1 ? '阳' : '阴'}）</p>
+                    <p><strong>次看：</strong>本卦《${benHex ? benHex.gua : ''}》</p>
+                    <p><strong>含义：</strong>四爻皆动表示事态剧变，本卦已发生根本转变。之卦中两个静爻是仅存的稳定因素，以下静爻为核心论断。</p>`;
+            } else if (dynamicCount === 5) {
+                const staticInZhi = zhiResults.map((v, i) => !hexagramResults[i].isOld ? i : -1).filter(i => i >= 0);
+                mainFocus = `之卦唯一静爻(${yaoNames[staticInZhi[0]]})`;
+                secondaryFocus = '本卦';
+                conclusion = '静爻为结局关键，抓住核心不变因素';
+                analysisText = `<p><strong>判断：</strong>五爻动，仅一爻静，此静爻为结局关键。</p>
+                    <p><strong>主看：</strong>之卦${yaoNames[staticInZhi[0]]}（静爻，之卦为${zhiResults[staticInZhi[0]] === 1 ? '阳' : '阴'}）</p>
+                    <p><strong>次看：</strong>本卦《${benHex ? benHex.gua : ''}》</p>
+                    <p><strong>含义：</strong>五爻皆动，仅存的静爻是全局稳定的核心，抓住这一点便能把握最终结局。</p>`;
+            } else if (dynamicCount === 6) {
+                mainFocus = '之卦';
+                secondaryFocus = '乾坤卦用九/用六';
+                conclusion = '六爻全动，旧局全变，全新开始';
+                const isQian = benGuaKey === '111111';
+                const isKun = benGuaKey === '000000';
+                analysisText = `<p><strong>判断：</strong>六爻全动，天地大变，全新开始。</p>
+                    <p><strong>主看：</strong>之卦《${zhiHex ? zhiHex.gua : ''}》</p>
+                    ${isQian ? '<p><strong>附加：</strong>《乾》卦用九「群龙无首，吉」</p>' : ''}
+                    ${isKun ? '<p><strong>附加：</strong>《坤》卦用六「利永贞」</p>' : ''}
+                    <p><strong>含义：</strong>本卦六爻尽变，事态发生根本性转变。旧格局彻底打破，全新局面正在展开。${isQian ? '乾为天用九，群龙无首乃大吉之象。' : ''}${isKun ? '坤为地用六，利在永久中正。' : ''}</p>`;
+            }
+            
+            html += `<div class="analysis-body">`;
+            html += `<p><strong>主看：</strong>${mainFocus}</p>`;
+            html += `<p><strong>次看：</strong>${secondaryFocus}</p>`;
+            html += `<p><strong>结论方向：</strong>${conclusion}</p>`;
+            html += analysisText;
+            html += `</div>`;
             html += '</div>';
             
             if (benHex) {
                 html += '<div class="divination-content">';
                 html += `<h3>本卦 · ${benHex.gua}</h3>`;
                 html += `<p><strong>卦辞：</strong>${benHex.guaCi}</p>`;
-                html += `<p><strong>彖传：</strong>${benHex.tuan}</p>`;
-                html += `<p><strong>象传：</strong>${benHex.xiang}</p>`;
+                if (benHex.tuan) {
+                    html += `<p><strong>彖传：</strong>${benHex.tuan}</p>`;
+                }
+                if (benHex.xiang) {
+                    html += `<p><strong>象传：</strong>${benHex.xiang}</p>`;
+                }
                 html += `<p><strong>六爻：</strong><br>`;
                 if (benHex.yao) {
-                    const yaoNames = ['初爻', '二爻', '三爻', '四爻', '五爻', '上爻'];
                     benHex.yao.forEach((y, i) => {
                         const marker = hexagramResults[i].isOld ? (hexagramResults[i].value === 1 ? '○' : '×') : '';
                         html += `${yaoNames[i]}${marker}：${y}<br>`;
@@ -817,13 +958,15 @@
                 html += '<div class="divination-content">';
                 html += `<h3>之卦 · ${zhiHex.gua}</h3>`;
                 html += `<p><strong>卦辞：</strong>${zhiHex.guaCi}</p>`;
-                html += `<p><strong>象传：</strong>${zhiHex.xiang}</p>`;
+                if (zhiHex.xiang) {
+                    html += `<p><strong>象传：</strong>${zhiHex.xiang}</p>`;
+                }
                 html += '</div>';
             }
             
             divinationResult.innerHTML = html;
             divinationResult.classList.add('visible');
-            stepIndicator.textContent = `本卦 ${benHex ? benHex.gua : ''}，之卦 ${zhiHex ? zhiHex.gua : ''}`;
+            stepIndicator.textContent = `${dynamicCount === 0 ? '六爻安静' : dynamicCount + '个动爻'} · 本卦${benHex ? benHex.gua : ''} · 之卦${zhiHex ? zhiHex.gua : ''}`;
         }
 
         function resetGame() {
